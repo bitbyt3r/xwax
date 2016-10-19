@@ -21,6 +21,7 @@
 #define TIMECODER_H
 
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "lut.h"
 #include "pitch.h"
@@ -107,7 +108,13 @@ static inline struct timecode_def* timecoder_get_definition(struct timecoder *tc
 
 static inline double timecoder_get_pitch(struct timecoder *tc)
 {
-    return pitch_current(&tc->pitch) / tc->speed;
+    FILE *fp;
+    fp = fopen("/tmp/pitch", "r");
+    double curr_pitch;
+    fscanf(fp, "%lf", &curr_pitch);
+    fclose(fp);
+    return curr_pitch;
+//    return pitch_current(&tc->pitch) / tc->speed;
 }
 
 /*
