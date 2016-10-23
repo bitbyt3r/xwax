@@ -204,9 +204,6 @@ static int pcm_revents(struct alsa_pcm *alsa, unsigned short *revents) {
 static void start(struct device *dv)
 {
     struct alsa *alsa = (struct alsa*)dv->local;
-
-    if (snd_pcm_start(alsa->capture.pcm) < 0)
-        abort();
 }
 
 
@@ -220,7 +217,7 @@ static ssize_t pollfds(struct device *dv, struct pollfd *pe, size_t z)
 
     total = 0;
 
-    r = pcm_pollfds(&alsa->capture, pe, z);
+    r = 0;
     if (r < 0)
         return -1;
     
@@ -267,21 +264,6 @@ static int playback(struct device *dv)
 
 static int capture(struct device *dv)
 {
-    int r;
-    struct alsa *alsa = (struct alsa*)dv->local;
-
-    r = snd_pcm_readi(alsa->capture.pcm, alsa->capture.buf,
-                      alsa->capture.period);
-    if (r < 0)
-        return r;
-    
-    if (r < alsa->capture.period) {
-        fprintf(stderr, "alsa: capture underrun %d/%ld.\n",
-                r, alsa->capture.period);
-    }
-
-    device_submit(dv, alsa->capture.buf, r);
-
     return 0;
 }
 
@@ -296,36 +278,6 @@ static int handle(struct device *dv)
     struct alsa *alsa = (struct alsa*)dv->local;
 
     /* Check input buffer for timecode capture */
-    
-    r = pcm_revents(&alsa->capture, &revents);
-    if (r < 0)
-        return -1;
-    
-    if (revents & POLLIN) {
-        r = capture(dv);
-        
-        if (r < 0) {
-            if (r == -EPIPE) {
-                fputs("ALSA: capture xrun.\n", stderr);
-
-                r = snd_pcm_prepare(alsa->capture.pcm);
-                if (r < 0) {
-                    alsa_error("prepare", r);
-                    return -1;
-                }
-
-                r = snd_pcm_start(alsa->capture.pcm);
-                if (r < 0) {
-                    alsa_error("start", r);
-                    return -1;
-                }
-
-            } else {
-                alsa_error("capture", r);
-                return -1;
-            }
-        } 
-    }
     
     /* Check the output buffer for playback */
     
@@ -364,7 +316,7 @@ static unsigned int sample_rate(struct device *dv)
 {
     struct alsa *alsa = (struct alsa*)dv->local;
 
-    return alsa->capture.rate;
+    return 44100;
 }
 
 
@@ -374,7 +326,6 @@ static void clear(struct device *dv)
 {
     struct alsa *alsa = (struct alsa*)dv->local;
 
-    pcm_close(&alsa->capture);
     pcm_close(&alsa->playback);
     free(dv->local);
 }
@@ -402,18 +353,11 @@ int alsa_init(struct device *dv, const char *device_name,
         return -1;
     }
 
-    if (pcm_open(&alsa->capture, device_name, SND_PCM_STREAM_CAPTURE,
-                rate, buffer_time) < 0)
-    {
-        fputs("Failed to open device for capture.\n", stderr);
-        goto fail;
-    }
-    
     if (pcm_open(&alsa->playback, device_name, SND_PCM_STREAM_PLAYBACK,
                 rate, buffer_time) < 0)
     {
         fputs("Failed to open device for playback.\n", stderr);
-        goto fail_capture;
+        goto fail;
     }
 
     device_init(dv, &alsa_ops);
@@ -421,8 +365,6 @@ int alsa_init(struct device *dv, const char *device_name,
 
     return 0;
 
- fail_capture:
-    pcm_close(&alsa->capture);
  fail:
     free(alsa);
     return -1;

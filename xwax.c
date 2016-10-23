@@ -45,7 +45,7 @@
 #define DEFAULT_OSS_BUFFERS 8
 #define DEFAULT_OSS_FRAGMENT 7
 
-#define DEFAULT_ALSA_BUFFER 8 /* milliseconds */
+#define DEFAULT_ALSA_BUFFER 32 /* milliseconds */
 
 #define DEFAULT_RATE 44100
 #define DEFAULT_PRIORITY 80
@@ -610,8 +610,14 @@ int main(int argc, char *argv[])
         goto out_rt;
     }
 
-    if (interface_start(&library, geo, decor) == -1)
-        goto out_rt;
+//    if (interface_start(&library, geo, decor) == -1)
+//        goto out_rt;
+
+
+    struct record re;
+    re.pathname = "/home/mark25/test.wav";
+    deck_load(&deck[0], &re);
+    deck_recue(&deck[0]);
 
     if (rig_main() == -1)
         goto out_interface;
