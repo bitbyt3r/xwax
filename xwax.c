@@ -45,7 +45,7 @@
 #define DEFAULT_OSS_BUFFERS 8
 #define DEFAULT_OSS_FRAGMENT 7
 
-#define DEFAULT_ALSA_BUFFER 32 /* milliseconds */
+#define DEFAULT_ALSA_BUFFER 128 /* milliseconds */
 
 #define DEFAULT_RATE 44100
 #define DEFAULT_PRIORITY 80
@@ -72,6 +72,8 @@ static bool protect, phono;
 static const char *importer;
 static struct timecode_def *timecode;
 
+static char *single_track;
+
 static void usage(FILE *fd)
 {
     fprintf(fd, "Usage: xwax [<options>]\n\n");
@@ -85,6 +87,7 @@ static void usage(FILE *fd)
       DEFAULT_PRIORITY);
 
     fprintf(fd, "Music library options:\n"
+      "  -p <path>      Path to a song\n"
       "  -l <path>      Location to scan for audio tracks\n"
       "  -s <program>   Library scanner (default '%s')\n\n",
       DEFAULT_SCANNER);
@@ -419,6 +422,20 @@ int main(int argc, char *argv[])
             argv += 2;
             argc -= 2;
 
+        } else if (!strcmp(argv[0], "-p")) {
+
+            /* set the track to use */
+
+            if (argc < 2) {
+                fprintf(stderr, "-p requires a name as an argument.\n");
+                return -1;
+            }
+
+            single_track = argv[1];
+
+            argv += 2;
+            argc -= 2;
+
         } else if (!strcmp(argv[0], "-33")) {
 
             speed = 1.0;
@@ -615,7 +632,7 @@ int main(int argc, char *argv[])
 
 
     struct record re;
-    re.pathname = "/home/mark25/test.wav";
+    re.pathname = single_track;
     deck_load(&deck[0], &re);
     deck_recue(&deck[0]);
 
