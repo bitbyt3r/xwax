@@ -350,7 +350,7 @@ static int sync_to_timecode(struct player *pl)
 
     /* If the timecoder is alive, use the pitch from the sine wave */
 
-    pl->pitch = timecoder_get_pitch(pl->timecoder);
+    pl->pitch = timecoder_get_pitch(pl->timecoder, pl);
 
     /* If we can read an absolute time from the timecode, then use it */
 

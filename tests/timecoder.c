@@ -57,9 +57,6 @@ int main(int argc, char *argv[])
         if (s % (RATE / INTERVAL) == 0) {
             float pitch;
 
-            pitch = timecoder_get_pitch(&tc);
-            printf("%f\t%.12f\n",
-                   (float)s / RATE, pitch);
         }
 
         s++;

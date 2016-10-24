@@ -106,8 +106,17 @@ static inline struct timecode_def* timecoder_get_definition(struct timecoder *tc
  * Return the pitch relative to reference playback speed
  */
 
-static inline double timecoder_get_pitch(struct timecoder *tc)
+static inline double timecoder_get_pitch(struct timecoder *tc, struct player *pl)
 {
+    double elapsed, remain;
+    remain = player_get_remain(pl);
+    elapsed = player_get_elapsed(pl);
+    if (remain < 0) {
+        player_seek_to(pl, 0);
+    }
+    if (elapsed < 0) {
+        player_seek_to(pl, player_get_remain(pl));
+    }
     FILE *fp;
     fp = fopen("/tmp/pitch", "r");
     double curr_pitch;
